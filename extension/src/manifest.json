@@ -1,0 +1,24 @@
+{
+	"manifest_version": 2,
+	"name": "workhours",
+	"version": "0.1",
+	"author": "Samuel Roland",
+	"homepage_url": "",
+	"description": "",
+	"default_locale": "fr",
+	"permissions": [
+		"storage"
+	],
+	"icons": {
+		"19": "icons/19.png",
+		"48": "icons/48.png"
+	},
+	"browser_action": {
+		"default_popup": "popup.html",
+		"default_title": "workhours",
+		"default_icon": {
+			"19": "icons/19.png",
+			"38": "icons/38.png"
+		}
+	}
+}
