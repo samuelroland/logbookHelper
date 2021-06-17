@@ -1,13 +1,14 @@
 # logbookHelper
-![icon](icon.png)
+<img src="icon.png" width="200px" alt="logbookHelper icon with letter L and H" /> 
 
-<!-- 
-### Open quickly local or remote development-related apps, through a small list of links.
-This is an **opensource web extension** licensed under **[GNU GPLv3 or later](/LICENSE.txt)**. It's dedicated to developers who want to open their web apps faster. It use VueJS, TailwindCSS and Jetbrains Mono. **Only available for Firefox Desktop 57.0+**.
+**Disclaimer**: DEVELOPMENT IN PROGRESS.
 
-![example img](img/category-jobs-link.png) | ![example img](img/category-perso-ip.png)
--->
+### Internship logbook helper for CPNV students
+This is an **opensource web extension** licensed under **[GNU GPLv3 or later](/LICENSE)**. It's dedicated IT CPNV students for their 2 interships on 3rd and 4th year. As they have to fill hours and descriptions about their work everyday, this extension could help to use the app on the Intranet. The extension take load inforation directly from `intranet.cpnv.ch` under the `/stages/Journal.php` route. The data and configuration keep in local.  
+It use VueJS, TailwindCSS and Jetbrains Mono. <!-- **Only available for Firefox Desktop 57.0+**.-->
+
 ## Features
+- Shows how many hours or days late or early there are.
 - ...
 
 ## Build
@@ -57,6 +58,10 @@ If you want to develop the extension:
 WIP
 
 ## Credits
+- openDevApps - [GNU GPLv3+](https://github.com/samuelroland/openDevApps/blob/develop/LICENSE.txt)  
+Copyright (C) 2021 Samuel Roland  
+(This is a derivative work of openDevApps, some files have been copied to have a basic file structure. Because of the openDevApps licence, logbookHelper is under the same licence).
+
 ### Librairies
 - TailwindCSS - [MIT](https://github.com/tailwindlabs/tailwindcss/blob/master/LICENSE)  
 Copyright (c) Adam Wathan <adam.wathan@gmail.com>  
