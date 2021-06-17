@@ -26,8 +26,8 @@ export default {
   name: "App",
   data() {
     return {
-      version: "v1.0",
-      versionDate: "02.04.2021"
+      version: "v0.1",
+      versionDate: "xx.xx.2021"
     };
   },
   components: { Popup }

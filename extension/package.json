@@ -2,9 +2,9 @@
   "name": "logbookhelper",
   "version": "0.0.1",
   "private": true,
-  "license": "",
-  "description": "",
-  "homepage": "",
+  "license": "GPL-3.0-or-later",
+  "description": "Internship logbook helper for CPNV students",
+  "homepage": "https://github.com/samuelroland/logbookHelper",
   "scripts": {
     "serve": "vue-cli-service build --mode development --watch",
     "build": "vue-cli-service build",
