@@ -17,8 +17,8 @@
 -->
 <template>
   <div
-    class="w-80 overflow-hidden overscroll-none p-1"
-    style="min-height: 75px; color: #76bfff; background-color: #0b0e44;"
+    class="overflow-hidden overscroll-none p-1 bg-dark text-blue px-2 py-1"
+    style="min-height: 75px; width: 800px; height: 600px;"
   >
     <div class="flex flex-1 min-w-max">
       <h3
@@ -34,15 +34,77 @@
       >
     </div>
 
+    <hr class="border-blue my-1" />
     <!-- Extension body -->
+
+    <!-- Stats -->
     <div v-if="settingsEnabled">settings...</div>
-    <div v-else>
-      aaaa
-      <br />
-      {{ totaltime }} / {{ totaltimetowork }}<br />
-      {{ diffInDays }} hours = {{ diffInDays }} days
+    <div v-if="notLogged">
+      Vous n'êtes pas connecté à l'intranet du CPNV... Essayez à nouveau une
+      fois connecté.
+    </div>
+    <div v-if="loading">
+      Chargement des données...
+    </div>
+    <div v-if="!notLogged">
+      <span class="text-xs">Temps total travaillé / Temps total requis</span>
+      <div class="text-sm">
+        <span :title="'Précisément ' + totaltime">
+          {{ roundWith2Decimals(totaltime) }} </span
+        >/
+        <span :title="'Précisément ' + totaltimetowork"
+          >{{ roundWith2Decimals(totaltimetowork) }} h.</span
+        >
+      </div>
+      <div>
+        <span class="text-xs">Temps moyen (par jour): </span>
+        <span class="text-sm">
+          <span :title="'Précisément ' + timeperday">{{
+            roundWith2Decimals(timeperday)
+          }}</span
+          >h/{{ 8.2 }}h
+        </span>
+      </div>
+      <div>
+        <span class="text-xs">Temps en retard:</span>
+        <span class="text-sm">
+          {{ diffInHours }} h. = {{ diffInDays }} jours
+        </span>
+      </div>
       <!-- {{ this.entries.length }} -->
-      <!-- <span v-for="entry in entries" :key="entry.text">{{ entry.text }}</span> -->
+    </div>
+
+    <hr class="border-blue my-1" />
+
+    <!-- Logbook content -->
+    <div class="w-full">
+      <div class="flex">
+        <span class="flex-1">Aperçu du journal</span
+        ><span class="text-sm">
+          <select v-model="nbDaysToDisplay">
+            <option value="1">1 jour</option>
+            <option value="2">2 jours</option>
+            <option value="7">1 semaine</option>
+            <option value="31">1 mois</option>
+            <option value="null">Tout</option>
+          </select>
+        </span>
+      </div>
+      <div
+        class="text-xs overflow-y-scroll break-normal w-full"
+        style="max-height: 390px; max-width: 900px;"
+      >
+        <div v-for="entry in entriesToDisplay" :key="entry.text">
+          <hr class="border-blue mt-1" />
+          <div>{{ entry.date }} {{ entry.time }}h</div>
+          <div class="w-full break-normal pl-4 pr-2">
+            {{ entry.text }}
+          </div>
+        </div>
+        <div class="italic text-xs" v-if="nbDaysToDisplay != null">
+          Jours suivants masqués...
+        </div>
+      </div>
     </div>
 
     <!-- Footer with 2 icons: link to source code and settings button - Always displayed -->
@@ -70,7 +132,7 @@
 import axios from "axios";
 
 const startTime =
-  "<input type='number' name='duration' step='0.25' max='12' min='0.25' value=";
+  "<input type='number' name='duration' step='0.25' max='12' min='0.25' value='";
 const endTime = "'>";
 const startDescription = "colspan=2 style='display: none;'>";
 const endDescription = "</td>";
@@ -96,16 +158,42 @@ export default {
   },
   data() {
     return {
+      nbDaysToDisplay: 1,
+      loading: false,
+      notLogged: false,
       settingsEnabled: false,
       entries: null,
       pageRawContent: null,
       totaltime: null,
+      timeperday: null,
       totaltimetowork: null,
       diffInHours: null,
       diffInDays: null
     };
   },
-  computed: {},
+  computed: {
+    entriesToDisplay() {
+      if (this.entries != null) {
+        if (this.nbDaysToDisplay == null) {
+          //Option "All" is selected
+          return this.entries; //return all entries without any filter
+        }
+        return this.entries.filter((value, index) => {
+          return index + 1 <= this.nbDaysToDisplay;
+        });
+      }
+      return [];
+    },
+    entriesByDay() {
+      var array;
+      if (this.entries != null) {
+        for (var entry in this.entries) {
+          array[entry.date].push(entry);
+        }
+      }
+      return [];
+    }
+  },
   methods: {
     //Go to source code button (icon with anchor) on GitHub
     goToSourceCode() {
@@ -118,6 +206,7 @@ export default {
     extractLogbookData() {
       console.log("extractLogbookData launched");
       var html = this.pageRawContent;
+      console.log(html);
 
       var ignoredDays = [];
 
@@ -136,8 +225,10 @@ export default {
       var timeperday = 0;
       var array = [];
       var nbDays = 0;
+      var currentItemIgnored; //is the current item ignored ?
+
       while (html.indexOf(startDescription, currentStartPosDesc) != -1) {
-        console.log(html.indexOf(startDescription, currentStartPosDesc));
+        currentItemIgnored = false;
         if (html.indexOf(startDescription, currentStartPosDesc) != -1) {
           pos1 =
             html.indexOf(startDescription, currentStartPosDesc) +
@@ -151,7 +242,7 @@ export default {
           currentStartPosDesc = pos1 + 1;
 
           pos2 =
-            html.indexOf(startTime, pos1 - (200 + startTime.length)) +
+            html.indexOf(startTime, pos1 - (1400 + startTime.length)) +
             startTime.length;
           //logIt(pos2)
           hours = html.substr(pos2, html.indexOf(endTime, pos2) - pos2);
@@ -178,37 +269,56 @@ export default {
             lastDate = date;
             array.push({ text: desc, time: hours, date: date });
           } else {
+            currentItemIgnored = true;
             ignoredDays.push({ text: desc, time: hours, date: date });
           }
 
-          logIt("date: " + date + " time: " + hours);
+          logIt(
+            "date: " +
+              date +
+              " time: " +
+              hours +
+              "h. -" +
+              (currentItemIgnored ? " day ignored" : " accepted")
+          );
 
-          //logIt(timeperweek)
-          console.log(count + " " + currentStartPosDesc + " " + hours);
           count++;
         }
-
-        timeperday = totaltime / nbDays;
-        logIt(array);
-        logIt(totaltime + "/" + nbDays * 8.2);
-        this.totaltime = totaltime;
-        this.totaltimetowork = nbDays * 8.2;
-        logIt(timeperday);
-        missingHours = (8.2 - timeperday) * nbDays;
-        this.diffInHours = missingHours;
-        logIt(missingHours);
-        logIt(missingHours / 8);
-        this.diffInDays = missingHours / 8.2;
-
-        this.entries = array;
       }
+      timeperday = totaltime / nbDays;
+      this.timeperday = timeperday;
+      logIt(array);
+      logIt(totaltime + "/" + nbDays * 8.2);
+      this.totaltime = totaltime;
+      this.totaltimetowork = nbDays * 8.2;
+      logIt(timeperday);
+      missingHours = (8.2 - timeperday) * nbDays;
+      this.diffInHours = missingHours;
+      logIt(missingHours);
+      logIt(missingHours / 8);
+      this.diffInDays = missingHours / 8.2;
+      console.log(count);
+      this.entries = array;
+    },
+    roundWith2Decimals(value) {
+      return Math.round(value * 100) / 100;
     }
   },
   mounted() {
-    axios.get("http://intranet.cpnv.ch/stages/Journal.php").then(response => {
+    this.loading = true;
+    axios.get("https://intranet.cpnv.ch/stages/Journal.php").then(response => {
       console.log("data is here !");
-      this.pageRawContent = response.data;
-      this.extractLogbookData();
+      if (
+        response.data.indexOf(
+          "Vous devez vous authentifier pour accéder à cette page"
+        ) != -1
+      ) {
+        this.notLogged = true;
+      } else {
+        this.pageRawContent = response.data;
+        this.extractLogbookData();
+      }
+      this.loading = false;
     });
   }
 };
