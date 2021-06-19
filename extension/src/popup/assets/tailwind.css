@@ -4,6 +4,12 @@
 
 @tailwind utilities;
 
-.input-standard {
-    @apply w-full px-1 rounded-md text-blue-800 border-solid border border-blue-500 focus:border-blue-800 outline-none;
+.text-blue {
+  color: #76bfff;
+}
+.border-blue {
+  border-color: #76bfff;
+}
+.bg-dark {
+  background-color: #0b0e44;
 }
