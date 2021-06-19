@@ -8,7 +8,8 @@
   "scripts": {
     "serve": "vue-cli-service build --mode development --watch",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "webext": "web-ext run -s ./dist"
   },
   "dependencies": {
     "axios": "^0.21.1",
