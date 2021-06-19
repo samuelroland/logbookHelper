@@ -5,7 +5,7 @@
   "author": "Samuel Roland",
   "homepage_url": "https://github.com/samuelroland/logbookHelper",
   "description": "Internship logbook helper for CPNV students",
-  "permissions": ["storage"],
+  "permissions": ["<all_urls>"],
   "icons": {
     "19": "icons/19.png",
     "48": "icons/48.png"

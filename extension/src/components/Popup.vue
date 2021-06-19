@@ -37,9 +37,12 @@
     <!-- Extension body -->
     <div v-if="settingsEnabled">settings...</div>
     <div v-else>
-      stats...
+      aaaa
       <br />
-      <span v-for="entry in entries" :key="entry.text">{{ entry.text }}</span>
+      {{ totaltime }} / {{ totaltimetowork }}<br />
+      {{ diffInDays }} hours = {{ diffInDays }} days
+      <!-- {{ this.entries.length }} -->
+      <!-- <span v-for="entry in entries" :key="entry.text">{{ entry.text }}</span> -->
     </div>
 
     <!-- Footer with 2 icons: link to source code and settings button - Always displayed -->
@@ -64,12 +67,15 @@
 </template>
 
 <script>
-const startTime = 'style="display: table-cell;" width="30px">';
-const endTime = " h.</td>";
-const startDescription = 'colspan="2" style="display: table-cell;">';
+import axios from "axios";
+
+const startTime =
+  "<input type='number' name='duration' step='0.25' max='12' min='0.25' value=";
+const endTime = "'>";
+const startDescription = "colspan=2 style='display: none;'>";
 const endDescription = "</td>";
-const startDate = '<input type="hidden" name="date" value="';
-const endDate = '">';
+const startDate = "<input type='hidden' name='date' value='";
+const endDate = "'>";
 const leaveDates = [
   "2021-05-21",
   "2021-05-24",
@@ -92,7 +98,11 @@ export default {
     return {
       settingsEnabled: false,
       entries: null,
-      pageRawContent: null
+      pageRawContent: null,
+      totaltime: null,
+      totaltimetowork: null,
+      diffInHours: null,
+      diffInDays: null
     };
   },
   computed: {},
@@ -106,8 +116,7 @@ export default {
       this.settingsEnabled = !this.settingsEnabled; //invert settings status
     },
     extractLogbookData() {
-      //logbookhelper.test/raw.html
-
+      console.log("extractLogbookData launched");
       var html = this.pageRawContent;
 
       var ignoredDays = [];
@@ -182,22 +191,26 @@ export default {
         timeperday = totaltime / nbDays;
         logIt(array);
         logIt(totaltime + "/" + nbDays * 8.2);
+        this.totaltime = totaltime;
+        this.totaltimetowork = nbDays * 8.2;
         logIt(timeperday);
         missingHours = (8.2 - timeperday) * nbDays;
+        this.diffInHours = missingHours;
         logIt(missingHours);
         logIt(missingHours / 8);
+        this.diffInDays = missingHours / 8.2;
 
         this.entries = array;
       }
     }
   },
   mounted() {
-    sendRequest(
-      "GET",
-      "http://logbookhelper.test/raw.html",
-      this.extractLogbookData,
-      null
-    );
+    axios.get("http://intranet.cpnv.ch/stages/Journal.php").then(response => {
+      console.log("data is here !");
+      this.pageRawContent = response.data;
+      this.extractLogbookData();
+    });
+  }
 };
 //Just log text in the console
 function logIt(text) {
