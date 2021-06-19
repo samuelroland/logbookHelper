@@ -46,7 +46,7 @@
     <div v-if="loading">
       Chargement des données...
     </div>
-    <div v-if="!notLogged">
+    <div v-if="displayInfo">
       <span class="text-xs">Temps total travaillé / Temps total requis</span>
       <div class="text-sm">
         <span :title="'Précisément ' + totaltime">
@@ -74,11 +74,11 @@
       <!-- {{ this.entries.length }} -->
     </div>
 
-    <hr class="border-blue my-1" />
+    <hr class="border-blue my-1" v-if="displayInfo" />
 
     <!-- Logbook content -->
-    <div class="w-full">
-      <div class="flex">
+    <div class="w-full" v-if="displayInfo">
+      <div class="flex border-blue border-b pb-1 mb-1">
         <span class="flex-1">Aperçu du journal</span
         ><span class="text-sm">
           <select v-model="nbDaysToDisplay">
@@ -86,20 +86,31 @@
             <option value="2">2 jours</option>
             <option value="7">1 semaine</option>
             <option value="31">1 mois</option>
-            <option value="null">Tout</option>
+            <option value="-1">Tout</option>
           </select>
         </span>
       </div>
       <div
-        class="text-xs overflow-y-scroll break-normal w-full"
+        class="text-xs overflow-y-scroll overflow-x-hidden break-normal"
         style="max-height: 390px; max-width: 900px;"
       >
-        <div v-for="entry in entriesToDisplay" :key="entry.text">
-          <hr class="border-blue mt-1" />
-          <div>{{ entry.date }} {{ entry.time }}h</div>
-          <div class="w-full break-normal pl-4 pr-2">
-            {{ entry.text }}
+        <div
+          class="mt-1 mb-2 pb-1"
+          v-for="(entriesOfADay, index) in entriesToDisplay"
+          :key="index"
+        >
+          <span class="font-extrabold text-sm"
+            >Le {{ formatDate(entriesOfADay[0].date) }}</span
+          >:
+          <div v-for="(entry, index) in entriesOfADay" :key="index">
+            <div class="font-bold">· {{ entry.time }}h</div>
+            <div
+              class="italic break-normal ml-3 pl-1 mr-2 whitespace-pre-line border-blue border-l mb-1"
+            >
+              {{ entry.text }}
+            </div>
           </div>
+          <hr class="border-blue mr-3 mt-2" />
         </div>
         <div class="italic text-xs" v-if="nbDaysToDisplay != null">
           Jours suivants masqués...
@@ -158,8 +169,8 @@ export default {
   },
   data() {
     return {
-      nbDaysToDisplay: 1,
-      loading: false,
+      nbDaysToDisplay: 31,
+      loading: true,
       notLogged: false,
       settingsEnabled: false,
       entries: null,
@@ -172,29 +183,55 @@ export default {
     };
   },
   computed: {
+    //Display logbook information only if data are present
+    displayInfo() {
+      return !this.notLogged && !this.settingsEnabled && !this.loading;
+    },
     entriesToDisplay() {
+      console.log(this.nbDaysToDisplay);
+      console.log(this.entries);
+      console.log(this.entriesByDay);
       if (this.entries != null) {
-        if (this.nbDaysToDisplay == null) {
+        if (this.nbDaysToDisplay == "-1") {
           //Option "All" is selected
-          return this.entries; //return all entries without any filter
+          return this.entriesByDay; //return all entries without any filter
         }
-        return this.entries.filter((value, index) => {
+        return this.entriesByDay.filter((value, index) => {
           return index + 1 <= this.nbDaysToDisplay;
         });
       }
       return [];
     },
     entriesByDay() {
-      var array;
+      var array = [];
+      var dayCount = -1;
+      var lastDate = null;
       if (this.entries != null) {
-        for (var entry in this.entries) {
-          array[entry.date].push(entry);
+        console.log("debug entries by day");
+        for (var entry of this.entries) {
+          if (lastDate != entry.date) {
+            dayCount++;
+            lastDate = entry.date;
+          }
+          if (array[dayCount] == undefined) {
+            array[dayCount] = [];
+          }
+          array[dayCount].push(entry);
         }
+        console.log(array);
+        return array;
       }
       return [];
     }
   },
   methods: {
+    //Format a date given in Y-m-d format in the d.m.Y format
+    formatDate(value) {
+      console.log(value);
+      return (
+        value.substr(8) + "." + value.substr(5, 2) + "." + value.substr(0, 4)
+      );
+    },
     //Go to source code button (icon with anchor) on GitHub
     goToSourceCode() {
       window.open("https://github.com/samuelroland/logbookHelper", "_blank");
