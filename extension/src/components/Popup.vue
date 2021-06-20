@@ -35,43 +35,69 @@
     </div>
 
     <hr class="border-blue my-1" />
+
     <!-- Extension body -->
 
-    <!-- Stats -->
-    <div v-if="settingsEnabled">settings...</div>
-    <div v-if="notLogged">
+    <!-- Messages about errors, loading and stid -->
+    <div v-if="settingsEnabled">
+      stid
+      <input
+        class="w-16 px-1"
+        type="number"
+        placeholder="default"
+        v-model="config.stid"
+        @change="console.log(config.stid)"
+      />
+    </div>
+    <div v-if="notLogged" class="message">
       Vous n'êtes pas connecté à l'intranet du CPNV... Essayez à nouveau une
       fois connecté.
     </div>
-    <div v-if="loading">
+    <div v-if="noInternshipFound" class="message">
+      Il n'y a pas de stage avec l'identifiant {{ config.stid }}...
+    </div>
+    <div v-if="loading" class="message">
       Chargement des données...
     </div>
+
+    <!-- Stats -->
     <div v-if="displayInfo">
-      <span class="text-xs">Temps total travaillé / Temps total requis</span>
-      <div class="text-sm">
-        <span :title="'Précisément ' + totaltime">
-          {{ roundWith2Decimals(totaltime) }} </span
-        >/
-        <span :title="'Précisément ' + totaltimetowork"
-          >{{ roundWith2Decimals(totaltimetowork) }} h.</span
-        >
+      <div
+        style="height: 92px"
+        :class="{ hidden: config.stid != null && config.stid != '' }"
+      >
+        <span class="text-xs">Temps total travaillé / Temps total requis</span>
+        <div class="text-sm">
+          <span :title="'Précisément ' + totaltime">
+            {{ roundWith2Decimals(totaltime) }} </span
+          >/
+          <span :title="'Précisément ' + totaltimetowork"
+            >{{ roundWith2Decimals(totaltimetowork) }} h.</span
+          >
+        </div>
+        <div>
+          <span class="text-xs">Temps moyen (par jour): </span>
+          <span class="text-sm">
+            <span :title="'Précisément ' + timeperday">{{
+              roundWith2Decimals(timeperday)
+            }}</span
+            >h/{{ 8.2 }}h
+          </span>
+        </div>
+        <div>
+          <span class="text-xs">Temps en retard:</span>
+          <span class="text-sm">
+            {{ diffInHours }} h. = {{ diffInDays }} jours
+          </span>
+        </div>
+        <!-- {{ this.entries.length }} -->
       </div>
-      <div>
-        <span class="text-xs">Temps moyen (par jour): </span>
-        <span class="text-sm">
-          <span :title="'Précisément ' + timeperday">{{
-            roundWith2Decimals(timeperday)
-          }}</span
-          >h/{{ 8.2 }}h
-        </span>
+      <div
+        class="message"
+        :class="{ hidden: config.stid == null || config.stid == '' }"
+      >
+        Statistiques désactivées.
       </div>
-      <div>
-        <span class="text-xs">Temps en retard:</span>
-        <span class="text-sm">
-          {{ diffInHours }} h. = {{ diffInDays }} jours
-        </span>
-      </div>
-      <!-- {{ this.entries.length }} -->
     </div>
 
     <hr class="border-blue my-1" v-if="displayInfo" />
@@ -79,10 +105,13 @@
     <!-- Logbook content -->
     <div class="w-full" v-if="displayInfo">
       <div class="flex border-blue border-b pb-1 mb-1">
-        <span class="flex-1">Aperçu du journal</span
+        <span class="flex-1"
+          >Journal de stage de
+          {{ internship.student != null ? internship.student : "?" }} chez
+          {{ internship.company != null ? internship.company : "?" }}</span
         ><span class="text-sm">
-          <span>{{ mention }}</span>
-          <select v-model="nbDaysToDisplay">
+          <span class="text-red-300">{{ mention }}</span>
+          <select class="bg-blue" v-model="nbDaysToDisplay">
             <option value="1">1 jour</option>
             <option value="2">2 jours</option>
             <option value="7">1 semaine</option>
@@ -150,6 +179,12 @@ const startDescription = "colspan=2 style='display: none;'>";
 const endDescription = "</td>";
 const startDate = "<input type='hidden' name='date' value='";
 const endDate = "'>";
+const startStudent =
+  "<input id='expand' type='button' value='Dérouler' style='float:right'/><h2>Stage de ";
+const endStudent = ", ";
+const startCompany = ", ";
+const endCompany = "</h2>";
+
 const leaveDates = [
   "2021-05-21",
   "2021-05-24",
@@ -170,12 +205,22 @@ export default {
   },
   data() {
     return {
+      config: {
+        stid: null, //"stage id" = internship id, if null it's the current internship of the logged person
+        savedStids: [], //several saved stid value (id and name)
+        keywordsOfEntryToIgnore: [] //keywords present in the description of the entries to ignore
+      },
       mention: "",
-      nbDaysToDisplay: 31,
+      nbDaysToDisplay: 2,
       loading: true,
       notLogged: false,
+      noInternshipFound: false,
       settingsEnabled: false,
       entries: null,
+      internship: {
+        student: "",
+        company: ""
+      },
       pageRawContent: null,
       totaltime: null,
       timeperday: null,
@@ -187,7 +232,12 @@ export default {
   computed: {
     //Display logbook information only if data are present
     displayInfo() {
-      return !this.notLogged && !this.settingsEnabled && !this.loading;
+      return (
+        !this.notLogged &&
+        !this.settingsEnabled &&
+        !this.loading &&
+        !this.noInternshipFound
+      );
     },
     entriesToDisplay() {
       console.log(this.nbDaysToDisplay);
@@ -241,6 +291,53 @@ export default {
     //Open settings and focus on create link input
     openSettings() {
       this.settingsEnabled = !this.settingsEnabled; //invert settings status
+
+      //if settings have been closed
+      if (this.settingsEnabled == false) {
+        this.loadLogbookData();
+      }
+    },
+    loadLogbookData() {
+      this.loading = true;
+      axios.defaults.timeout = 1000;
+
+      axios
+        .post(
+          "https://intranet.cpnv.ch/stages/Journal.php",
+          this.config.stid != null && this.config.stid != ""
+            ? "stid=" + this.config.stid
+            : null
+        )
+        .then(response => {
+          console.log("data is here !");
+
+          if (
+            response.data.indexOf(
+              "Vous devez vous authentifier pour accéder à cette page"
+            ) != -1
+          ) {
+            this.notLogged = true;
+          } else if (response.data.indexOf("<h2>Stage de  , </h2>") != -1) {
+            this.noInternshipFound = true;
+          } else {
+            this.pageRawContent = response.data;
+            this.extractLogbookData();
+          }
+          this.loading = false;
+        })
+        .catch(e => {
+          console.log(e);
+          this.loading = false;
+          browser.storage.local.get().then(data => {
+            if (data.entries != null) {
+              this.entries = data.entries;
+              this.internship = data.internship;
+              this.mention = "Données locales. Connexion échouée.";
+            } else {
+              this.mention = "Pas de données. Connexion échouée.";
+            }
+          });
+        });
     },
     extractLogbookData() {
       console.log("extractLogbookData launched");
@@ -338,9 +435,30 @@ export default {
       this.diffInDays = missingHours / 8.2;
       console.log(count);
       this.entries = array;
-      browser.storage.local.set(
-        JSON.parse(JSON.stringify({ entries: this.entries }))
+
+      var internship = {};
+      //Student fullname extraction
+      var posStudent = html.indexOf(startStudent) + startStudent.length;
+      internship.student = html.substr(
+        posStudent,
+        html.indexOf(endStudent, posStudent) - posStudent
       );
+
+      //Company name extraction
+      var posCompany =
+        html.indexOf(startCompany, posStudent) + startCompany.length;
+      internship.company = html.substr(
+        posCompany,
+        html.indexOf(endCompany) - posCompany
+      );
+
+      this.internship = internship;
+      browser.storage.local.set(
+        JSON.parse(
+          JSON.stringify({ entries: this.entries, internship: this.internship })
+        )
+      );
+
       browser.storage.local.get().then(a => {
         console.log(a);
       });
@@ -350,35 +468,7 @@ export default {
     }
   },
   mounted() {
-    this.loading = true;
-    axios.defaults.timeout = 1000;
-
-    axios
-      .get("https://intranet.cpnv.ch/stages/Journal.php", { timeout: 1000 })
-      .then(response => {
-        console.log("data is here !");
-        if (
-          response.data.indexOf(
-            "Vous devez vous authentifier pour accéder à cette page"
-          ) != -1
-        ) {
-          this.notLogged = true;
-        } else {
-          this.pageRawContent = response.data;
-          this.extractLogbookData();
-        }
-        this.loading = false;
-      })
-      .catch(e => {
-        browser.storage.local.get().then(data => {
-          if (data.entries != null) {
-            this.entries = data.entries;
-            this.mention = "Données locales. Connexion échouée.";
-          } else {
-            this.mention = "Pas de données. Connexion échouée.";
-          }
-        });
-      });
+    this.loadLogbookData();
   }
 };
 //Just log text in the console

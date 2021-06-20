@@ -13,3 +13,8 @@
 .bg-dark {
   background-color: #0b0e44;
 }
+
+.message {
+  @apply italic text-sm;
+  color: rgba(1, 82, 189, 0.829);
+}
