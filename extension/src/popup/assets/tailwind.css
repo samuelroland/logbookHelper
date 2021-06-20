@@ -7,8 +7,20 @@
 .text-blue {
   color: #76bfff;
 }
+.bg-lightbluelighted {
+  background-color: rgba(118, 191, 255, 0.795);
+}
+.hover\:bg-lightbluelighted:hover {
+  background-color: rgba(118, 191, 255, 0.795);
+}
+.bg-lightblue {
+  background-color: #76bfff;
+}
+.hover\:bg-lightblue:hover {
+  background-color: #76bfff;
+}
 .border-blue {
-  border-color: #76bfff;
+  border-color: #959ca3;
 }
 .bg-dark {
   background-color: #0b0e44;
@@ -16,5 +28,5 @@
 
 .message {
   @apply italic text-sm;
-  color: rgba(1, 82, 189, 0.829);
+  color: rgb(0, 91, 211);
 }

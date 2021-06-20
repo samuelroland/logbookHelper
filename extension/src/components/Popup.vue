@@ -20,18 +20,38 @@
     class="overflow-hidden overscroll-none p-1 bg-dark text-blue px-2 py-1"
     style="min-height: 75px; width: 800px; height: 600px;"
   >
-    <div class="flex flex-1 min-w-max">
-      <h3
-        class="flex flex-row items-center m-0 text-lg cursor-help"
-        title="Internship logbook helper for CPNV students"
-      >
-        logbookHelper
-      </h3>
-      <span
-        class="text-xs cursor-help italic flex items-end ml-1 w-10"
-        :title="'Released the ' + versionDate + '.'"
-        >{{ version }}</span
-      >
+    <div class="flex">
+      <div class="flex flex-1 min-w-max">
+        <h3
+          class="flex flex-row items-center m-0 text-lg cursor-help"
+          title="Internship logbook helper for CPNV students"
+        >
+          logbookHelper
+        </h3>
+        <span
+          class="text-xs cursor-help italic flex items-end ml-1 w-10"
+          :title="'Released the ' + versionDate + '.'"
+          >{{ version }}</span
+        >
+      </div>
+      <!-- Meta buttons always displayed with GitHub repos link and settings -->
+      <div class="flex justify-end">
+        <img
+          src="icons/github.svg"
+          class="w-7 hover:bg-lightblue bg-lightbluelighted rounded p-1"
+          alt="code icon"
+          title="Checkout the code on GitHub, it's opensource !"
+          @click="goToSourceCode"
+        />
+        <img
+          src="icons/settings.svg"
+          alt="settings icon"
+          title="Open/Close settings"
+          class="w-7 hover:bg-lightblue bg-lightbluelighted rounded px-1 ml-1"
+          :class="{ 'bg-blue-400': settingsEnabled }"
+          @click="openSettings"
+        />
+      </div>
     </div>
 
     <hr class="border-blue my-1" />
@@ -146,25 +166,6 @@
           Jours suivants masqués...
         </div>
       </div>
-    </div>
-
-    <!-- Footer with 2 icons: link to source code and settings button - Always displayed -->
-    <div class="flex flex-1 mt-2 justify-end">
-      <img
-        src="icons/github.svg"
-        class="w-7 hover:bg-blue-500 rounded hover:text-white p-1"
-        alt="code icon"
-        title="Checkout the code on GitHub, it's opensource !"
-        @click="goToSourceCode"
-      />
-      <img
-        src="icons/settings.svg"
-        alt="settings icon"
-        title="Open/Close settings"
-        class="w-7 hover:bg-blue-500 rounded hover:text-white px-1"
-        :class="{ 'bg-blue-400': settingsEnabled }"
-        @click="openSettings"
-      />
     </div>
   </div>
 </template>
