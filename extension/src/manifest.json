@@ -5,7 +5,7 @@
   "author": "Samuel Roland",
   "homepage_url": "https://github.com/samuelroland/logbookHelper",
   "description": "Internship logbook helper for CPNV students",
-  "permissions": ["https://intranet.cpnv.ch/stages/Journal.php"],
+  "permissions": ["https://intranet.cpnv.ch/stages/Journal.php", "storage"],
   "icons": {
     "19": "icons/19.png",
     "48": "icons/48.png"
@@ -16,6 +16,12 @@
     "default_icon": {
       "19": "icons/19.png",
       "38": "icons/38.png"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "addon@example.com",
+      "strict_min_version": "42.0"
     }
   }
 }

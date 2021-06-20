@@ -81,6 +81,7 @@
       <div class="flex border-blue border-b pb-1 mb-1">
         <span class="flex-1">Aperçu du journal</span
         ><span class="text-sm">
+          <span>{{ mention }}</span>
           <select v-model="nbDaysToDisplay">
             <option value="1">1 jour</option>
             <option value="2">2 jours</option>
@@ -169,6 +170,7 @@ export default {
   },
   data() {
     return {
+      mention: "",
       nbDaysToDisplay: 31,
       loading: true,
       notLogged: false,
@@ -336,6 +338,12 @@ export default {
       this.diffInDays = missingHours / 8.2;
       console.log(count);
       this.entries = array;
+      browser.storage.local.set(
+        JSON.parse(JSON.stringify({ entries: this.entries }))
+      );
+      browser.storage.local.get().then(a => {
+        console.log(a);
+      });
     },
     roundWith2Decimals(value) {
       return Math.round(value * 100) / 100;
@@ -343,20 +351,34 @@ export default {
   },
   mounted() {
     this.loading = true;
-    axios.get("https://intranet.cpnv.ch/stages/Journal.php").then(response => {
-      console.log("data is here !");
-      if (
-        response.data.indexOf(
-          "Vous devez vous authentifier pour accéder à cette page"
-        ) != -1
-      ) {
-        this.notLogged = true;
-      } else {
-        this.pageRawContent = response.data;
-        this.extractLogbookData();
-      }
-      this.loading = false;
-    });
+    axios.defaults.timeout = 1000;
+
+    axios
+      .get("https://intranet.cpnv.ch/stages/Journal.php", { timeout: 1000 })
+      .then(response => {
+        console.log("data is here !");
+        if (
+          response.data.indexOf(
+            "Vous devez vous authentifier pour accéder à cette page"
+          ) != -1
+        ) {
+          this.notLogged = true;
+        } else {
+          this.pageRawContent = response.data;
+          this.extractLogbookData();
+        }
+        this.loading = false;
+      })
+      .catch(e => {
+        browser.storage.local.get().then(data => {
+          if (data.entries != null) {
+            this.entries = data.entries;
+            this.mention = "Données locales. Connexion échouée.";
+          } else {
+            this.mention = "Pas de données. Connexion échouée.";
+          }
+        });
+      });
   }
 };
 //Just log text in the console
