@@ -130,7 +130,7 @@
           {{ internship.student != null ? internship.student : "?" }} chez
           {{ internship.company != null ? internship.company : "?" }}</span
         ><span class="text-sm">
-          <span class="text-red-300">{{ mention }}</span>
+          <span class="text-red-300 text-xs">{{ mention }}</span>
           <select class="bg-blue" v-model="nbDaysToDisplay">
             <option value="1">1 jour</option>
             <option value="2">2 jours</option>
@@ -233,12 +233,7 @@ export default {
   computed: {
     //Display logbook information only if data are present
     displayInfo() {
-      return (
-        !this.notLogged &&
-        !this.settingsEnabled &&
-        !this.loading &&
-        !this.noInternshipFound
-      );
+      return !this.settingsEnabled && !this.loading && !this.noInternshipFound;
     },
     entriesToDisplay() {
       console.log(this.nbDaysToDisplay);
@@ -318,6 +313,8 @@ export default {
             ) != -1
           ) {
             this.notLogged = true;
+            this.extractLocalDataIfExist();
+            this.mention = "Données locales chargées...";
           } else if (response.data.indexOf("<h2>Stage de  , </h2>") != -1) {
             this.noInternshipFound = true;
           } else {
@@ -329,16 +326,24 @@ export default {
         .catch(e => {
           console.log(e);
           this.loading = false;
-          browser.storage.local.get().then(data => {
-            if (data.entries != null) {
-              this.entries = data.entries;
-              this.internship = data.internship;
-              this.mention = "Données locales. Connexion échouée.";
-            } else {
-              this.mention = "Pas de données. Connexion échouée.";
-            }
-          });
+          if (this.extractLocalDataIfExist()) {
+            this.mention = "Données locales. Connexion échouée.";
+          } else {
+            this.mention = "Pas de données. Connexion échouée.";
+          }
         });
+    },
+    extractLocalDataIfExist() {
+      browser.storage.local.get().then(data => {
+        if (data.entries != null) {
+          console.log("local data found !");
+          this.entries = data.entries;
+          this.internship = data.internship;
+          return true;
+        }
+        console.log("local data not found !");
+        return false;
+      });
     },
     extractLogbookData() {
       console.log("extractLogbookData launched");
