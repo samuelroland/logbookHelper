@@ -105,9 +105,12 @@
           </span>
         </div>
         <div>
-          <span class="text-xs">Temps en retard:</span>
+          <span class="text-xs"
+            >Temps {{ diffInHours > 0 ? "en retard" : "en avance" }}:
+          </span>
           <span class="text-sm">
-            {{ diffInHours }} h. = {{ diffInDays }} jours
+            {{ Math.abs(roundWith2Decimals(diffInHours)) }} h. =
+            {{ Math.abs(roundWith2Decimals(diffInDays)) }} jours
           </span>
         </div>
         <!-- {{ this.entries.length }} -->
@@ -151,7 +154,8 @@
         >
           <span class="font-extrabold text-sm"
             >Le {{ formatDate(entriesOfADay[0].date) }}</span
-          >:
+          >
+          - {{ totalHoursPerDay(entriesOfADay) }}h :
           <div v-for="(entry, index) in entriesOfADay" :key="index">
             <div class="font-bold">· {{ entry.time }}h</div>
             <div
@@ -273,6 +277,13 @@ export default {
     }
   },
   methods: {
+    totalHoursPerDay(entriesByDay) {
+      var total = 0;
+      for (var entry of entriesByDay) {
+        total += parseFloat(entry.time);
+      }
+      return total;
+    },
     //Format a date given in Y-m-d format in the d.m.Y format
     formatDate(value) {
       console.log(value);
